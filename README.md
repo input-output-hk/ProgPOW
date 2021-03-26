@@ -2,9 +2,9 @@
 
 [![Join the chat at https://gitter.im/ifdefelse/community](https://badges.gitter.im/ifdefelse/community.svg)](https://gitter.im/ifdefelse/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)[![Follow us](https://img.shields.io/twitter/follow/IfDefElse_.svg)](https://twitter.com/IfDefElse_)
 
-ProgPoW is a proof-of-work algorithm designed to close the efficiency gap available to specialized ASICs. It utilizes almost all parts of commodity hardware (GPUs), and comes pre-tuned for the most common hardware utilized in the Ethereum network.
+ProgPoW is a proof-of-work algorithm designed to close the efficiency gap available to specialized ASICs. It utilizes almost all parts of commodity hardware (GPUs) and comes pre-tuned for the most common hardware used in the Ethereum network.
 
-Ever since the first bitcoin mining ASIC was released, many new Proof of Work algorithms have been created with the intention of being “ASIC-resistant”. The goal of “ASIC-resistance” is to resist the centralization of PoW mining power such that these coins couldn’t be so easily manipulated by a few players. 
+Ever since the first bitcoin mining ASIC was released, many new Proof of Work algorithms have been created with the intention of being “ASIC-resistant”. The goal of “ASIC-resistance” is to resist the centralization of PoW mining power such that these coins could not be so easily manipulated by a few players. 
 
 This document presents an overview of the algorithm and examines what it means to be “ASIC-resistant.” Next, we compare existing PoW designs by analyzing how each algorithm executes in hardware. Finally, we present the detailed implementation by walking through the code.
 
@@ -31,36 +31,36 @@ ethminer/ethminer -G -M 10000000
 which use CUDA and OpenCL, respectively.
 
 ## ProgPoW Overview
-The design goal of ProgPoW is to have the algorithm’s requirements match what is available on commodity GPUs:  If the algorithm were to be implemented on a custom ASIC there should be little opportunity for efficiency gains compared to a commodity GPU.
+The design goal of ProgPoW is to have the algorithm’s requirements match what is available on commodity GPUs.  If the algorithm were to be implemented on a custom ASIC, there should be little opportunity for efficiency gains compared to a commodity GPU.
 
 The main elements of the algorithm are:
-* Changes keccak_f1600 (with 64-bit words) to keccak_f800 (with 32-bit words) to reduce impact on total power
+* Changes keccak_f1600 (with 64-bit words) to keccak_f800 (with 32-bit words) to reduce the impact on total power
 * Increases mix state.
 * Adds a random sequence of math in the main loop.
 * Adds reads from a small, low-latency cache that supports random addresses.
 * Increases the DRAM read from 128 bytes to 256 bytes.
 
-The random sequence changes every `PROGPOW_PERIOD` (50 blocks or about 12.5 minutes).  When mining source code is generated for the random sequence and compiled on the host CPU.  The GPU will execute the compiled code where what math to perform and what mix state to use are already resolved.
+The random sequence changes every `PROGPOW_PERIOD` (50 blocks or about 12.5 minutes).  When mining, source code is generated for the random sequence and compiled on the host CPU.  The GPU will execute the compiled code, where what math to perform and what mix state to use are already resolved.
 
 While a custom ASIC to implement this algorithm is still possible, the efficiency gains available are minimal.  The majority of a commodity GPU is required to support the above elements. The only optimizations available are:
-* Remove the graphics pipeline (displays, geometry engines, texturing, etc)
+* Remove the graphics pipeline (displays, geometry engines, texturing, etc.)
 * Remove floating point math
 * A few ISA tweaks, like instructions that exactly match the merge() function
 
-These would result in minimal, roughly 1.1-1.2x, efficiency gains.  This is much less than the 2x for Ethash or 50x for Cryptonight.
+These would result in minimal, roughly 1.1-1.2x, efficiency gains.  This gain is much less than the 2x for Ethash or 50x for Cryptonight.
 
 ## Rationale for PoW on Commodity Hardware
-With the growth of large mining pools, the control of hashing power has been delegated to the top few pools to provide a steadier economic return for small miners. While some have made the argument that large centralized pools defeats the purpose of “ASIC resistance,” it’s important to note that ASIC based coins are even more centralized for several reasons.
+With the growth of large mining pools, the control of hashing power has been delegated to the top few pools to provide a steadier economic return for small miners. While some have made the argument that having large centralized pools defeats the purpose of “ASIC resistance,” it is important to note that ASIC based coins are even more centralized for several reasons:
 
-1. No natural distribution: There isn’t an economic purpose for ultra-specialized hardware outside of mining and thus no reason for most people to have it. 
-2. No reserve group: Thus, there’s no reserve pool of hardware or reserve pool of interested parties to jump in when coin price is volatile and attractive for manipulation. 
-3. High barrier to entry: Initial miners are those rich enough to invest capital and ecological resources on the unknown experiment a new coin may be. Thus, initial coin distribution through mining will be very limited causing centralized economic bias. 
-4. Delegated centralization vs implementation centralization: While pool centralization is delegated, hardware monoculture is not: only the limiter buyers of this hardware can participate so there isn’t even the possibility of divesting control on short notice.
+1. No natural distribution: There is no economic purpose for ultra-specialized hardware outside of mining and thus no reason for most people to have it. 
+2. No reserve group: Thus, there is no reserve pool of hardware or reserve pool of interested parties to jump in when coin price is volatile and attractive for manipulation. 
+3. High barrier to entry: Initial miners are those rich enough to invest capital and ecological resources on the unknown experiment a new coin may be. Thus, initial coin distribution through mining will be very limited, causing centralized economic bias. 
+4. Delegated centralization vs implementation centralization: While pool centralization is delegated, hardware monoculture is not: only the limiter buyers of this hardware can participate, so there is not even the possibility of divesting control on short notice.
 5. No obvious decentralization of control even with decentralized mining: Once large custom ASIC makers get into the game, designing back-doored hardware is trivial. ASIC makers have no incentive to be transparent or fair in market participation.
 
-While the goal of “ASIC resistance” is valuable, the entire concept of “ASIC resistance” is a bit of a fallacy.  CPUs and GPUs are themselves ASICs.  Any algorithm that can run on a commodity ASIC (a CPU or GPU) by definition can have a customized ASIC created for it with slightly less functionality. Some algorithms are intentionally made to be  “ASIC friendly” - where an ASIC implementation is drastically more efficient than the same algorithm running on general purpose hardware. The protection that this offers when the coin is unknown also makes it an attractive target for a dedicate mining ASIC company as soon as it becomes useful.
+While the goal of “ASIC resistance” is valuable, the entire concept of “ASIC resistance” is a bit of a fallacy.  CPUs and GPUs are themselves ASICs.  Any algorithm that can run on a commodity ASIC (a CPU or GPU) by definition can have a customized ASIC created for it with slightly less functionality. Some algorithms are intentionally made to be  “ASIC friendly” - where an ASIC implementation is drastically more efficient than the same algorithm running on general-purpose hardware. The protection that this offers when the coin is unknown also makes it an attractive target for a dedicated mining ASIC company as soon as it becomes useful.
 
-Therefore, ASIC resistance is: the efficiency difference of specialized hardware versus hardware that has a wider adoption and applicability.  A smaller efficiency difference between custom vs general hardware mean higher resistance and a better algorithm. This efficiency difference is the proper metric to use when comparing the quality of PoW algorithms.  Efficiency could mean absolute performance, performance per watt, or performance per dollar - they are all highly correlated.  If a single entity creates and controls an ASIC that is drastically more efficient, they can gain 51% of the network hashrate and possibly stage an attack.
+Therefore, ASIC resistance is: the efficiency difference of specialized hardware versus hardware that has a wider adoption and applicability.  A smaller efficiency difference between custom vs general hardware means higher resistance and a better algorithm. This efficiency difference is the proper metric to use when comparing the quality of PoW algorithms.  Efficiency could mean absolute performance, performance per watt, or performance per dollar - they are all highly correlated.  If a single entity creates and controls an ASIC that is drastically more efficient, they can gain 51% of the network hashrate and possibly stage an attack.
 
 ## Review of Existing PoW Algorithms
 
@@ -107,7 +107,7 @@ Compared to Scrypt, CryptoNight does much less compute and requires a full 2mb o
 ### Ethash
 * Potential ASIC efficiency gain ~ 2X
 
-Ethash requires external memory due to the large size of the DAG.  However that is all that it requires - there is minimal compute that is done on the result loaded from memory.  As a result a custom ASIC could remove most of the complexity, and power, of a GPU and be just a memory interface connected to a small compute engine.
+Ethash requires external memory due to the large size of the DAG.  However, that is all that it requires - there is minimal compute that is done on the result loaded from memory.  As a result, a custom ASIC could remove most of the complexity, and power, of a GPU and be just a memory interface connected to a small compute engine.
 
 ## ProgPoW Algorithm Walkthrough
 
@@ -118,10 +118,10 @@ Release 0.9.3 has been software and hardware audited:
 * [Bob Rao - ProgPoW Hardware Audit PDF](https://github.com/ethereum-cat-herders/progpow-audit/raw/master/Bob%20Rao%20-%20ProgPOW%20Hardware%20Audit%20Report%20Final.pdf)
 
 Following the suggestion expressed by Least Authority in their findings, new proposed release 0.9.4 introduces a tweak in DAG generation in order to mitigate the possibility of a "Light Evaluation" attack.
-This change implies the modification of `ETHASH_DATASET_PARENTS` from a value of 256 to the new value of 512. Due to this the DAG memory file used by ProgPoW is no more compatible with the one used by Ethash (epoch lenght and size increase ratio remain the same though).
+This change implies the modification of `ETHASH_DATASET_PARENTS` from a value of 256 to the new value of 512. Due to this, the DAG memory file used by ProgPoW is no longer compatible with the one used by Ethash (epoch length and size increase ratio remain the same, though).
 
-After the audits release a clever finding by [Kik](https://github.com/kik/) disclosed an exploitable condition to [bypass ProgPoW memory hardness](https://github.com/kik/progpow-exploit). Worth to mention the exploit would require the availability of a customized node able to accept modified block headers by the miner.
-Purpose of this new spec release is to patch the condition modifying the input state of the last keccak pass so it changes from :
+After the audits release, a clever finding by [Kik](https://github.com/kik/) disclosed an exploitable condition to [bypass ProgPoW memory hardness](https://github.com/kik/progpow-exploit). Worth to mention the exploit would require the availability of a customized node able to accept modified block headers by the miner.
+The purpose of this new spec release is to patch the condition modifying the input state of the last keccak pass so it changes from :
 * header (256 bits) +
 * seed for mix initiator (64 bits) +
 * mix from main loop (256 bits) 
@@ -164,7 +164,7 @@ Release 0.9.4 keeps the same tunables of 0.9.3 and includes the tweak for DAG ge
 
 The random program changes every `PROGPOW_PERIOD` blocks (default `10`, roughly 2 minutes) to ensure the hardware executing the algorithm is fully programmable.  If the program only changed every DAG epoch (roughly 5 days) certain miners could have time to develop hand-optimized versions of the random sequence, giving them an undue advantage.
 
-Sample code is written in C++, this should be kept in mind when evaluating the code in the specification.
+Sample code is written in C++; this should be kept in mind when evaluating the code in the specification.
 
 All numerics are computed using unsigned 32 bit integers.  Any overflows are trimmed off before proceeding to the next computation.  Languages that use numerics not fixed to bit lengths (such as Python and JavaScript) or that only use signed integers (such as Java) will need to keep their languages' quirks in mind.  The extensive use of 32 bit data values aligns with modern GPUs internal data architectures.
 
@@ -231,9 +231,9 @@ void fill_mix(
 }
 ```
 
-Like Ethash Keccak is used to seed the sequence per-nonce and to produce the final result.  The keccak-f800 variant is used as the 32-bit word size matches the native word size of modern GPUs.  The implementation is a variant of SHAKE with width=800, bitrate=576, capacity=224, output=256, and no padding.  The result of keccak is treated as a 256-bit big-endian number - that is result byte 0 is the MSB of the value.
+Like Ethash, Keccak is used to seed the sequence per-nonce and to produce the final result.  The keccak-f800 variant is used as the 32-bit word size matches the native word size of modern GPUs.  The implementation is a variant of SHAKE with width=800, bitrate=576, capacity=224, output=256, and no padding.  The result of keccak is treated as a 256-bit big-endian number - that is result byte 0 is the MSB of the value.
 
-As with Ethash the input and output of the keccak function are fixed and relatively small.  This means only a single "absorb" and "squeeze" phase are required.  For a pseudo-code implementation of the `keccak_f800_round` function see the `Round[b](A,RC)` function in the "Pseudo-code description of the permutations" section of the [official Keccak specs](https://keccak.team/keccak_specs_summary.html).
+As with Ethash, the input and output of the keccak function are fixed and relatively small.  This means only single "absorb" and "squeeze" phases are required.  For a pseudo-code implementation of the `keccak_f800_round` function see the `Round[b](A,RC)` function in the "Pseudo-code description of the permutations" section of the [official Keccak specs](https://keccak.team/keccak_specs_summary.html).
 
 ```cpp
 hash32_t keccak_f800_progpow(uint32_t* state)
@@ -253,7 +253,7 @@ hash32_t keccak_f800_progpow(uint32_t* state)
 
 The inner loop uses FNV and KISS99 to generate a random sequence from the `prog_seed`.  This random sequence determines which mix state is accessed and what random math is performed.
 
-Since the `prog_seed` changes only once per `PROGPOW_PERIOD` (10 blocks or about 2 minutes) it is expected that while mining `progPowLoop` will be evaluated on the CPU to generate source code for that period's sequence.  The source code will be compiled on the CPU before running on the GPU.  You can see an example sequence and generated source code in [kernel.cu](test/kernel.cu).
+Since the `prog_seed` changes only once per `PROGPOW_PERIOD` (10 blocks or about 2 minutes) it is expected that while mining, `progPowLoop` will be evaluated on the CPU to generate source code for that period's sequence.  The source code will be compiled on the CPU before running on the GPU.  You can see an example sequence and generated source code in [kernel.cu](test/kernel.cu).
 
 Test vectors can be found [in the test vectors file](test-vectors.md#progPowInit).
 
